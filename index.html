@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#1a1e22">
+<title>School Lunch PIN Practice</title>
+<style>
+  * {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    box-sizing: border-box;
+  }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+    padding: 16px;
+    background-color: #1a1e22;
+    touch-action: manipulation;
+  }
+  .terminal {
+    background-color: #383e44;
+    padding: 22px;
+    border-radius: 20px;
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.65);
+    width: min(320px, 94vw);
+    border: 1px solid #4f5760;
+  }
+  .screen {
+    background-color: #5c6e50;
+    color: #151d10;
+    font-family: "Courier New", Courier, monospace;
+    font-size: 32px;
+    font-weight: 700;
+    letter-spacing: 8px;
+    text-align: center;
+    height: 54px;
+    line-height: 54px;
+    border-radius: 6px;
+    margin-bottom: 20px;
+    border: 3px solid #20271c;
+    box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.45);
+    transition: background-color 0.2s;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+  button {
+    font-size: 30px;
+    font-weight: 700;
+    padding: 16px 0;
+    border: none;
+    border-radius: 8px;
+    background: #e6e6e6;
+    color: #111;
+    box-shadow: 0 4px #adadad;
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+  button:active {
+    transform: translateY(3px);
+    box-shadow: 0 1px #808080;
+  }
+  .clear {
+    background-color: #d13628;
+    color: #fff;
+    font-size: 15px;
+    box-shadow: 0 4px #821f15;
+  }
+  .enter {
+    background-color: #218746;
+    color: #fff;
+    font-size: 15px;
+    box-shadow: 0 4px #124f28;
+  }
+  .settings-bar {
+    margin-top: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: min(320px, 94vw);
+    padding: 0 4px;
+  }
+  .parent-btn {
+    background: #2a3138;
+    color: #9ab4c7;
+    border: 1px solid #4a545e;
+    font-size: 12px;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    box-shadow: none;
+  }
+  .credits {
+    font-size: 12px;
+    color: #8392a0;
+  }
+</style>
+</head>
+<body>
+
+<div class="terminal">
+  <div id="screen" class="screen">----</div>
+  <div class="grid">
+    <button onclick="press('7')">7</button>
+    <button onclick="press('8')">8</button>
+    <button onclick="press('9')">9</button>
+    <button onclick="press('4')">4</button>
+    <button onclick="press('5')">5</button>
+    <button onclick="press('6')">6</button>
+    <button onclick="press('1')">1</button>
+    <button onclick="press('2')">2</button>
+    <button onclick="press('3')">3</button>
+    <button class="clear" onclick="clearPin()">CLEAR</button>
+    <button onclick="press('0')">0</button>
+    <button class="enter" onclick="submitPin()">ENTER</button>
+  </div>
+</div>
+
+<div class="settings-bar">
+  <button class="parent-btn" onclick="configurePin()">Set PIN</button>
+  <div class="credits">Created by Ganesh Arjunan</div>
+</div>
+
+<script>
+  let targetPin = localStorage.getItem("lunch_target_pin") || "1234";
+  let input = "";
+  const screen = document.getElementById("screen");
+
+  let audioCtx = null;
+  function beep(freq, duration) {
+    try {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + duration);
+    } catch (e) {}
+  }
+
+  function render() {
+    screen.textContent = input.padEnd(4, "-");
+  }
+
+  function press(digit) {
+    beep(750, 0.08);
+    if (navigator.vibrate) navigator.vibrate(20);
+    if (input.length < 4) {
+      input += digit;
+      render();
+    }
+  }
+
+  function clearPin() {
+    beep(400, 0.12);
+    if (navigator.vibrate) navigator.vibrate(35);
+    input = "";
+    render();
+  }
+
+  function submitPin() {
+    if (input === targetPin) {
+      beep(880, 0.1);
+      setTimeout(() => beep(1175, 0.2), 120);
+      screen.textContent = "PASS";
+      screen.style.backgroundColor = "#7ea864";
+      setTimeout(() => {
+        screen.style.backgroundColor = "#5c6e50";
+        clearPin();
+      }, 1400);
+    } else {
+      beep(220, 0.25);
+      if (navigator.vibrate) navigator.vibrate([60, 50, 60]);
+      screen.textContent = "ERROR";
+      screen.style.backgroundColor = "#b05555";
+      setTimeout(() => {
+        screen.style.backgroundColor = "#5c6e50";
+        clearPin();
+      }, 1100);
+    }
+  }
+
+  function configurePin() {
+    const entered = prompt("Enter your child's 4-digit lunch PIN:", targetPin);
+    if (entered && /^\d{4}$/.test(entered)) {
+      targetPin = entered;
+      localStorage.setItem("lunch_target_pin", entered);
+      alert("PIN updated to " + entered + ". Ready for practice!");
+      clearPin();
+    } else if (entered !== null) {
+      alert("Please enter exactly 4 digits (0-9).");
+    }
+  }
+</script>
+</body>
+</html>
